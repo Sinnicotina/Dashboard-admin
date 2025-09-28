@@ -1,0 +1,48 @@
+.scrollbar-custom {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+  position: relative;
+
+  /* 🔥 Desvanecimiento en los bordes */
+  -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+}
+
+/* Scroll minimalista */
+.scrollbar-custom::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: #525960;
+  border-radius: 9999px;
+}
+
+@media (max-width: 768px) {
+  .scrollbar-custom {
+    -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+  }
+}
+
+@media (min-width: 769px) {
+  .scrollbar-custom {
+    -webkit-mask-image: none !important;
+    mask-image: none !important;
+  }
+}
+
