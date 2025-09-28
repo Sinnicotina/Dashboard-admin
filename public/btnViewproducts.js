@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    // Crear el módulo de edición una sola vez para evitar múltiples listeners en el botón Update
+    const editModule = createEditModule({ showToast, reloadList: () => btnLoad.click() });
+
     btnLoad.addEventListener("click", async () => {
         try {
             // 🔍 Detecta si estamos en local o en producción
@@ -69,17 +72,16 @@ document.addEventListener("DOMContentLoaded", () => {
             productList.innerHTML = "<p>Error cargando productos. Revisa la consola.</p>";
             showToast('Error cargando productos', 'error');
         }
-        // Botones de borrado (añadidos a cada tarjeta como .btn-delete)
+    // Botones de borrado (añadidos a cada tarjeta como .btn-delete)
         const deleteButtons = document.querySelectorAll('.btn-delete');
         // Creamos el módulo de borrado, le pasamos las funciones de toast para feedback
         const deleteModule = createDeleteModule({ showToast, showToastWithUndo });
         // Asociamos los botones renderizados al módulo para que maneje modal, undo y DELETE
         deleteModule.bindDeleteButtons(deleteButtons);
 
-        // ---- Edit buttons handling (delegado a btnEdit.js) ----
-        const editButtons = document.querySelectorAll('.edit-button');
-        const editModule = createEditModule({ showToast, reloadList: () => btnLoad.click() });
-        editModule.bindEditButtons(editButtons);
+    // ---- Edit buttons handling (delegado a btnEdit.js) ----
+    const editButtons = document.querySelectorAll('.edit-button');
+    editModule.bindEditButtons(editButtons);
 
     });
 
