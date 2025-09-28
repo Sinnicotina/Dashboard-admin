@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             products.forEach(product => {
                     const card = document.createElement("div");
-                    card.classList.add("product-card");
+                    card.classList.add("product-card", "w-full", "p-4");
                     // atributo para localizar la tarjeta y actualizarla después de editar
                     card.setAttribute('data-id-card', product._id);
 
