@@ -1,9 +1,23 @@
+/**
+ * 🚀 SERVIDOR PRINCIPAL - INVENTARIO STOCKPILOT
+ * 
+ * Este archivo configura el servidor Express con:
+ * - Conexión a MongoDB Atlas
+ * - Middleware de autenticación JWT
+ * - Rutas protegidas para productos
+ * - Servicio de archivos estáticos
+ * - CORS configurado para desarrollo y producción
+ */
+
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import cookieParser from 'cookie-parser';
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import authRoutes from './routes/auth.js';
+import authMiddleware from './middleware/auth.js';
 
 dotenv.config();
 const app = express();
@@ -12,10 +26,12 @@ const app = express();
 app.use(cors({
   origin:["http://localhost:3000", "https://vercel-prueba-ten.vercel.app", "http://localhost:5000"],
   methods:["GET","POST","DELETE","PUT"],
-  allowedHeaders:["Content-Type"]
+  allowedHeaders:["Content-Type"],
+  credentials: true // permite cookies cross-site (necesario para httpOnly cookies)
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Necesario en ESModules para usar __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -61,13 +77,21 @@ async function generateProductCode() {
 // 📂 Servir archivos estáticos desde public/
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Rutas frontend
-app.get("/", (req, res) => {
+// Rutas frontend protegidas
+app.get("/", authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
+// Ruta de login (no protegida)
+app.get("/login.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public", "login.html"));
+});
+
+// auth routes (register/login/logout/me)
+app.use('/auth', authRoutes);
+
 // 🌐 API
-app.get("/products", async (req, res) => {
+app.get("/products", authMiddleware, async (req, res) => {
   // Devolver productos ordenados por 'code' ascendente. Si 'code' no existe en
   // algunos documentos, se ordenarán según la semántica de Mongo (valores null/absent primero).
   // Si prefieres que los sin código queden al final, podemos usar una pipeline de aggregation.
@@ -75,7 +99,7 @@ app.get("/products", async (req, res) => {
   res.json(products);
 });
 
-app.post("/products", async (req, res) => {
+app.post("/products", authMiddleware, async (req, res) => {
   try {
     // Si no se pasa un code, generamos uno automáticamente
     if (!req.body.code) {
@@ -91,7 +115,7 @@ app.post("/products", async (req, res) => {
 });
 
 // RUTA DE BACKFILL: asigna códigos a productos que no los tengan
-app.post('/products/backfill-codes', async (req, res) => {
+app.post('/products/backfill-codes', authMiddleware, async (req, res) => {
   try {
     // Obtener productos que no tengan el campo `code`
     const toFix = await Product.find({ code: { $exists: false } }).limit(1000);
@@ -109,7 +133,7 @@ app.post('/products/backfill-codes', async (req, res) => {
 });
 
 // DELETE product by id
-app.delete('/products/:id', async (req, res) => {
+app.delete('/products/:id', authMiddleware, async (req, res) => {
   try {
     const deleted = await Product.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
@@ -121,7 +145,7 @@ app.delete('/products/:id', async (req, res) => {
 });
 
 // GET product by id
-app.get('/products/:id', async (req, res) => {
+app.get('/products/:id', authMiddleware, async (req, res) => {
   try {
     const prod = await Product.findById(req.params.id);
     if (!prod) return res.status(404).json({ error: 'Not found' });
@@ -133,7 +157,7 @@ app.get('/products/:id', async (req, res) => {
 });
 
 // PUT: update a product by id
-app.put('/products/:id', async (req, res) => {
+app.put('/products/:id', authMiddleware, async (req, res) => {
   try {
     const updates = req.body;
     const updated = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });

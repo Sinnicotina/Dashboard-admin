@@ -59,8 +59,48 @@
               notifications
             </span>
           </button>
-          <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
-            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDCXiw3BM67JGL18DGDGwkam2iB3dTllmtUrzNbHiXzassZcZSe6mxSZG0so20_zJ6coCYkuw0gr7JVjbCatQnh9Rpcv966qVY1WL4zA16G3xpvia6TsRCvXJCOV_avfeZB4g7CFD6JOGw-LX9i_QRxOJvAWLCrlUIuzerGQwd240F-eEm8FX6Kogkn53wo3SIzPA_4wRLmuGX0MNiz1RbQ46_9hEsTpDG27rE9LJosl5Z-u8rLGe3EF5M5V_g7dGweqN5dMx6Jkfg");'>
+          <!-- Menú de usuario desplegable -->
+          <div class="relative" id="user-menu-container">
+            <button id="user-menu-btn"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 dark:bg-primary/20 text-primary hover:bg-primary/20 dark:hover:bg-primary/30 transition-colors">
+              <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-8"
+                style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDCXiw3BM67JGL18DGDGwkam2iB3dTllmtUrzNbHiXzassZcZSe6mxSZG0so20_zJ6coCYkuw0gr7JVjbCatQnh9Rpcv966qVY1WL4zA16G3xpvia6TsRCvXJCOV_avfeZB4g7CFD6JOGw-LX9i_QRxOJvAWLCrlUIuzerGQwd240F-eEm8FX6Kogkn53wo3SIzPA_4wRLmuGX0MNiz1RbQ46_9hEsTpDG27rE9LJosl5Z-u8rLGe3EF5M5V_g7dGweqN5dMx6Jkfg");'>
+              </div>
+              <span class="text-sm font-medium" id="user-name">Usuario</span>
+              <span class="material-symbols-outlined text-sm">expand_more</span>
+            </button>
+            
+            <!-- Menú desplegable -->
+            <div id="user-menu" class="absolute right-0 top-full mt-2 w-48 bg-background-light dark:bg-background-dark rounded-lg shadow-lg border border-primary/20 dark:border-primary/30 opacity-0 pointer-events-none transform scale-95 transition-all duration-200 z-50">
+              <div class="py-2">
+                <div class="px-4 py-2 border-b border-primary/10 dark:border-primary/20">
+                  <p class="text-sm font-medium text-primary" id="user-email">usuario@ejemplo.com</p>
+                  <p class="text-xs text-primary/70">Administrador</p>
+                </div>
+                
+                <button id="profile-btn" class="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors flex items-center gap-3">
+                  <span class="material-symbols-outlined text-base">person</span>
+                  <span>Mi Perfil</span>
+                </button>
+                
+                <button id="settings-btn" class="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors flex items-center gap-3">
+                  <span class="material-symbols-outlined text-base">settings</span>
+                  <span>Configuración</span>
+                </button>
+                
+                <button id="help-btn" class="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-colors flex items-center gap-3">
+                  <span class="material-symbols-outlined text-base">help</span>
+                  <span>Ayuda</span>
+                </button>
+                
+                <div class="border-t border-primary/10 dark:border-primary/20 my-1"></div>
+                
+                <button id="logout-btn" class="w-full px-4 py-2 text-left text-sm text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-3">
+                  <span class="material-symbols-outlined text-base">logout</span>
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -83,7 +123,7 @@
             <span class="material-symbols-outlined text-base">filter_list</span>
             <span>Filter Products</span>
           </button>
-          <button
+          <button id="add-product-btn"
             class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors">
             <span class="material-symbols-outlined text-base">add</span>
             <span>Add Product</span>
@@ -168,6 +208,107 @@
             </div>
         </div>
   <script type="module" src="btnViewproducts.js"></script>
+  <script type="module">
+    import checkAuth from './checkAuth.js';
+    (async ()=>{
+      const ok = await checkAuth();
+      if (ok) {
+        // cargar el módulo principal que maneja productos
+        await import('./btnViewproducts.js');
+        
+        // Cargar información del usuario
+        loadUserInfo();
+        
+        // Manejar menú desplegable de usuario
+        setupUserMenu();
+      }
+    })();
+    
+    // Función para cargar información del usuario
+    async function loadUserInfo() {
+      try {
+        const res = await fetch('/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const user = await res.json();
+          document.getElementById('user-name').textContent = user.username || 'Usuario';
+          document.getElementById('user-email').textContent = user.email;
+        }
+      } catch (err) {
+        console.error('Error cargando información del usuario:', err);
+      }
+    }
+    
+    // Función para configurar el menú de usuario
+    function setupUserMenu() {
+      const menuBtn = document.getElementById('user-menu-btn');
+      const menu = document.getElementById('user-menu');
+      const logoutBtn = document.getElementById('logout-btn');
+      const profileBtn = document.getElementById('profile-btn');
+      const settingsBtn = document.getElementById('settings-btn');
+      const helpBtn = document.getElementById('help-btn');
+      
+      // Toggle del menú
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = menu.classList.contains('opacity-100');
+        
+        if (isOpen) {
+          menu.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+          menu.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+        } else {
+          menu.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+          menu.classList.add('opacity-100', 'pointer-events-auto', 'scale-100');
+        }
+      });
+      
+      // Cerrar menú al hacer clic fuera
+      document.addEventListener('click', (e) => {
+        if (!menuBtn.contains(e.target) && !menu.contains(e.target)) {
+          menu.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+          menu.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+        }
+      });
+      
+      // Logout
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          if (res.ok) {
+            window.location.href = '/login.html';
+          } else {
+            alert('Error al cerrar sesión');
+          }
+        } catch (err) {
+          console.error('Error en logout:', err);
+          alert('Error al cerrar sesión');
+        }
+      });
+      
+      // Perfil
+      profileBtn.addEventListener('click', () => {
+        alert('Función de perfil próximamente disponible');
+        menu.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+        menu.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+      });
+      
+      // Configuración
+      settingsBtn.addEventListener('click', () => {
+        alert('Función de configuración próximamente disponible');
+        menu.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+        menu.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+      });
+      
+      // Ayuda
+      helpBtn.addEventListener('click', () => {
+        alert('Función de ayuda próximamente disponible');
+        menu.classList.remove('opacity-100', 'pointer-events-auto', 'scale-100');
+        menu.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+      });
+    }
+  </script>
   
   <!-- Toast container (usado por btnViewproducts.js) - ahora en bottom-right -->
   <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 items-end"></div>

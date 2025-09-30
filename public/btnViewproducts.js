@@ -11,19 +11,43 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    // Manejar botón "Add Product" usando ID específico
+    const addProductBtn = document.getElementById('add-product-btn');
+    if (addProductBtn) {
+        console.log('✅ Botón Add Product encontrado');
+        addProductBtn.addEventListener('click', () => {
+            console.log('🆕 Abriendo modal para agregar producto');
+            showAddProductModal();
+        });
+    } else {
+        console.error('❌ No se encontró el botón Add Product con ID add-product-btn');
+    }
+
     // Crear el módulo de edición una sola vez para evitar múltiples listeners en el botón Update
     const editModule = createEditModule({ showToast, reloadList: () => btnLoad.click() });
 
     btnLoad.addEventListener("click", async () => {
         try {
+            console.log('🔄 Cargando productos...');
             // 🔍 Detecta si estamos en local o en producción
             // Usar ruta relativa permite funcionar tanto en dev (localhost:5000) como en producción
             const API_URL = "/products";
 
-            const res = await fetch(API_URL);
-            if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+            console.log('📡 Haciendo petición a:', API_URL);
+            const res = await fetch(API_URL, {
+                credentials: 'include' // Importante para enviar cookies de autenticación
+            });
+            
+            console.log('📊 Respuesta del servidor:', res.status, res.statusText);
+            
+            if (!res.ok) {
+                const errorText = await res.text();
+                console.error('❌ Error del servidor:', errorText);
+                throw new Error(`Error HTTP: ${res.status} - ${errorText}`);
+            }
 
             const products = await res.json();
+            console.log('✅ Productos recibidos:', products.length, 'productos');
 
             productList.innerHTML = "";
 
@@ -125,4 +149,117 @@ function showToastWithUndo(message, id, onUndo, timeout = 6000) {
     wrapper.appendChild(btn);
 
     showToast(wrapper, 'info', timeout);
+}
+
+/**
+ * 🆕 MODAL PARA AGREGAR PRODUCTO
+ * 
+ * Muestra un modal para crear nuevos productos
+ */
+function showAddProductModal() {
+    // Crear modal si no existe
+    let modal = document.getElementById('add-product-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'add-product-modal';
+        modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none z-50';
+        modal.innerHTML = `
+            <div class="bg-background-light dark:bg-background-dark rounded-xl shadow-lg w-full max-w-md transform transition-transform duration-300 scale-95">
+                <div class="p-6">
+                    <h3 class="text-lg font-medium mb-4">Agregar Producto</h3>
+                    <form id="add-product-form" class="space-y-4">
+                        <div>
+                            <label class="text-sm text-primary" for="add-prod-name">Nombre del Producto</label>
+                            <input
+                                class="form-input mt-1 w-full rounded-md border-primary/20 bg-primary/10 dark:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                id="add-prod-name" name="nombre" type="text" required />
+                        </div>
+                        <div>
+                            <label class="text-sm text-primary" for="add-prod-stock">Stock</label>
+                            <input
+                                class="form-input mt-1 w-full rounded-md border-primary/20 bg-primary/10 dark:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                id="add-prod-stock" name="stock" type="text" required />
+                        </div>
+                        <div>
+                            <label class="text-sm text-primary" for="add-prod-price">Precio</label>
+                            <input
+                                class="form-input mt-1 w-full rounded-md border-primary/20 bg-primary/10 dark:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                id="add-prod-price" name="price" type="number" step="0.01" required />
+                        </div>
+                        <div>
+                            <label class="text-sm text-primary" for="add-prod-img">URL de Imagen</label>
+                            <input
+                                class="form-input mt-1 w-full rounded-md border-primary/20 bg-primary/10 dark:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                                id="add-prod-img" name="img" type="url" placeholder="https://ejemplo.com/imagen.jpg" />
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-primary/5 dark:bg-primary/10 px-6 py-4 flex justify-end gap-3 rounded-b-xl">
+                    <button id="add-cancel-btn" class="px-4 py-2 text-sm font-medium text-primary bg-primary/10 dark:bg-primary/20 hover:bg-primary/20 dark:hover:bg-primary/30 rounded-md transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="add-save-btn" class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors">
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Event listeners
+        document.getElementById('add-cancel-btn').addEventListener('click', () => hideAddProductModal());
+        document.getElementById('add-save-btn').addEventListener('click', handleAddProduct);
+    }
+    
+    // Mostrar modal
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+    modal.querySelector('.transform').classList.remove('scale-95');
+    modal.querySelector('.transform').classList.add('scale-100');
+    
+    // Limpiar formulario
+    document.getElementById('add-product-form').reset();
+}
+
+function hideAddProductModal() {
+    const modal = document.getElementById('add-product-modal');
+    if (modal) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        modal.querySelector('.transform').classList.remove('scale-100');
+        modal.querySelector('.transform').classList.add('scale-95');
+    }
+}
+
+async function handleAddProduct() {
+    const form = document.getElementById('add-product-form');
+    const formData = new FormData(form);
+    const productData = {
+        nombre: formData.get('nombre'),
+        stock: formData.get('stock'),
+        price: parseFloat(formData.get('price')),
+        img: formData.get('img') || 'https://via.placeholder.com/300x300?text=Sin+Imagen'
+    };
+    
+    try {
+        const res = await fetch('/products', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(productData)
+        });
+        
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al crear producto');
+        }
+        
+        showToast('Producto creado exitosamente', 'success');
+        hideAddProductModal();
+        
+        // Recargar lista de productos
+        document.getElementById('btn-load').click();
+        
+    } catch (error) {
+        console.error('Error creando producto:', error);
+        showToast(error.message, 'error');
+    }
 }
